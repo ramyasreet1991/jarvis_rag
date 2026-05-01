@@ -1,0 +1,343 @@
+{
+  "system": {
+    "name": "Technology Content RAG",
+    "version": "1.0.0",
+    "environment": "production",
+    "log_level": "INFO"
+  },
+  
+  "credibility_settings": {
+    "minimum_threshold": 0.65,
+    "domain_authority_weight": 0.25,
+    "author_reputation_weight": 0.25,
+    "content_quality_weight": 0.20,
+    "citation_density_weight": 0.15,
+    "update_freshness_weight": 0.10,
+    "community_validation_weight": 0.05,
+    "credibility_decay_days": 180
+  },
+  
+  "sources": {
+    "tier_1_news": [
+      {
+        "url": "https://news.ycombinator.com/",
+        "type": "news",
+        "domain": "news.ycombinator.com",
+        "author": "YCombinator",
+        "name": "Hacker News",
+        "description": "Curated tech/startup news and discussions",
+        "subscribers": 500000,
+        "credibility_score": 1.0,
+        "update_frequency": "hourly",
+        "extraction_method": "selenium",
+        "tags": ["news", "startups", "technology"]
+      },
+      {
+        "url": "https://www.infoq.com/feed/",
+        "type": "rss",
+        "domain": "infoq.com",
+        "author": "InfoQ",
+        "name": "InfoQ RSS Feed",
+        "description": "Enterprise software/architecture articles",
+        "subscribers": 100000,
+        "credibility_score": 0.95,
+        "update_frequency": "daily",
+        "extraction_method": "rss",
+        "tags": ["architecture", "enterprise", "technology"]
+      }
+    ],
+    
+    "tier_1_youtube": [
+      {
+        "url": "https://www.youtube.com/@ThePrimeagen",
+        "type": "youtube",
+        "domain": "youtube.com",
+        "author": "ThePrimeagen",
+        "name": "ThePrimeagen",
+        "description": "Software engineering, Unix, development tools",
+        "subscribers": 250000,
+        "credibility_score": 0.95,
+        "update_frequency": "weekly",
+        "extraction_method": "youtube-transcript-api",
+        "tags": ["development", "unix", "tools", "vim"],
+        "language": "english"
+      },
+      {
+        "url": "https://www.youtube.com/@Fireship",
+        "type": "youtube",
+        "domain": "youtube.com",
+        "author": "Fireship",
+        "name": "Fireship",
+        "description": "High-level tech explanations and coding tutorials",
+        "subscribers": 1200000,
+        "credibility_score": 0.95,
+        "update_frequency": "weekly",
+        "extraction_method": "youtube-transcript-api",
+        "tags": ["education", "tutorials", "technology"],
+        "language": "english"
+      },
+      {
+        "url": "https://www.youtube.com/@ArjanCodes",
+        "type": "youtube",
+        "domain": "youtube.com",
+        "author": "ArjanCodes",
+        "name": "ArjanCodes",
+        "description": "Python, design patterns, software architecture",
+        "subscribers": 350000,
+        "credibility_score": 0.90,
+        "update_frequency": "weekly",
+        "extraction_method": "youtube-transcript-api",
+        "tags": ["python", "design-patterns", "architecture"],
+        "language": "english"
+      }
+    ],
+    
+    "tier_2_blogs": [
+      {
+        "url": "https://www.paulgraham.com/articles.html",
+        "type": "blog",
+        "domain": "paulgraham.com",
+        "author": "Paul Graham",
+        "name": "Paul Graham Essays",
+        "description": "Essays on technology, startups, and culture",
+        "subscribers": 100000,
+        "credibility_score": 0.95,
+        "update_frequency": "monthly",
+        "extraction_method": "beautifulsoup",
+        "tags": ["essays", "startup", "philosophy"]
+      },
+      {
+        "url": "https://dev.to/feed",
+        "type": "rss",
+        "domain": "dev.to",
+        "author": "DEV Community",
+        "name": "DEV.to Community",
+        "description": "Community-driven technical articles (vetted)",
+        "subscribers": 1000000,
+        "credibility_score": 0.75,
+        "update_frequency": "hourly",
+        "extraction_method": "rss",
+        "tags": ["community", "articles", "technology"],
+        "filters": {
+          "minimum_likes": 50,
+          "minimum_comments": 5
+        }
+      },
+      {
+        "url": "https://hashnode.com/api/rss/feed",
+        "type": "rss",
+        "domain": "hashnode.com",
+        "author": "Hashnode",
+        "name": "Hashnode Technical Writing",
+        "description": "Curated technical blogs from writers",
+        "subscribers": 500000,
+        "credibility_score": 0.80,
+        "update_frequency": "daily",
+        "extraction_method": "rss",
+        "tags": ["technical-writing", "blogs"]
+      }
+    ],
+    
+    "tier_2_podcasts": [
+      {
+        "url": "https://feeds.acastcdn.com/discover/lex-fridman-podcast",
+        "type": "podcast",
+        "domain": "lexfridman.com",
+        "author": "Lex Fridman",
+        "name": "Lex Fridman Podcast",
+        "description": "Long-form conversations with researchers and engineers",
+        "subscribers": 500000,
+        "credibility_score": 0.85,
+        "update_frequency": "weekly",
+        "extraction_method": "podcast_rss",
+        "tags": ["podcast", "ai", "technology", "research"],
+        "language": "english"
+      },
+      {
+        "url": "https://feeds.transistor.fm/changelog",
+        "type": "podcast",
+        "domain": "changelog.com",
+        "author": "Changelog",
+        "name": "Changelog",
+        "description": "Weekly discussions on open source and software development",
+        "subscribers": 100000,
+        "credibility_score": 0.80,
+        "update_frequency": "weekly",
+        "extraction_method": "podcast_rss",
+        "tags": ["podcast", "open-source", "software"],
+        "language": "english"
+      }
+    ],
+    
+    "tier_3_research": [
+      {
+        "url": "https://arxiv.org/",
+        "type": "research",
+        "domain": "arxiv.org",
+        "author": "Cornell University",
+        "name": "arXiv Computer Science",
+        "description": "Pre-prints of research papers",
+        "subscribers": 50000,
+        "credibility_score": 0.90,
+        "update_frequency": "daily",
+        "extraction_method": "arxiv_api",
+        "tags": ["research", "papers", "ai", "ml"],
+        "filters": {
+          "categories": ["cs.AI", "cs.LG", "cs.SE"]
+        }
+      },
+      {
+        "url": "https://scholar.google.com/",
+        "type": "research",
+        "domain": "scholar.google.com",
+        "author": "Google",
+        "name": "Google Scholar",
+        "description": "Aggregated academic and research papers",
+        "subscribers": 1000000,
+        "credibility_score": 0.95,
+        "update_frequency": "continuous",
+        "extraction_method": "scholarly_api",
+        "tags": ["research", "papers"]
+      }
+    ]
+  },
+  
+  "extraction_config": {
+    "chunk_size": 512,
+    "chunk_overlap": 100,
+    "min_content_length": 100,
+    "max_content_length": 50000,
+    "timeout_seconds": 30,
+    "retry_attempts": 3,
+    "retry_delay_seconds": 5
+  },
+  
+  "embedding_config": {
+    "model": "text-embedding-3-small",
+    "dimension": 1536,
+    "batch_size": 20,
+    "max_tokens": 8191
+  },
+  
+  "vector_store_config": {
+    "provider": "pinecone",
+    "index_name": "tech-content-rag",
+    "dimension": 1536,
+    "metric": "cosine",
+    "namespaces": {
+      "news": "news_articles",
+      "youtube": "youtube_transcripts",
+      "blog": "blog_posts",
+      "podcast": "podcast_transcripts",
+      "research": "research_papers"
+    }
+  },
+  
+  "llm_config": {
+    "provider": "openai",
+    "model": "gpt-4-turbo",
+    "temperature": 0.7,
+    "max_tokens": 2000,
+    "top_p": 0.95,
+    "frequency_penalty": 0.0,
+    "presence_penalty": 0.0
+  },
+  
+  "retrieval_config": {
+    "similarity_top_k": 10,
+    "min_credibility": 0.65,
+    "hybrid_search": true,
+    "semantic_weight": 0.7,
+    "bm25_weight": 0.3,
+    "reranking": true,
+    "date_range_days": 90
+  },
+  
+  "ingestion_schedule": {
+    "frequency": "daily",
+    "time": "02:00",
+    "timezone": "UTC",
+    "parallelism": 4
+  },
+  
+  "quality_checks": {
+    "duplicate_detection": {
+      "enabled": true,
+      "method": "hash-based"
+    },
+    "content_validation": {
+      "enabled": true,
+      "min_length": 100,
+      "max_length": 50000,
+      "language": "english"
+    },
+    "source_validation": {
+      "enabled": true,
+      "credibility_threshold": 0.65
+    },
+    "citation_validation": {
+      "enabled": true,
+      "verify_urls": true
+    }
+  },
+  
+  "monitoring": {
+    "enabled": true,
+    "metrics": {
+      "document_ingestion_rate": true,
+      "query_latency": true,
+      "retrieval_precision": true,
+      "citation_accuracy": true
+    },
+    "alerts": {
+      "ingestion_failure": true,
+      "high_latency": true,
+      "low_precision": true
+    }
+  },
+  
+  "content_generation": {
+    "templates": {
+      "blog_post": {
+        "default_length": "medium",
+        "default_tone": "informative",
+        "include_citations": true,
+        "max_sources": 8
+      },
+      "twitter_thread": {
+        "default_tweets": 5,
+        "default_tone": "casual",
+        "include_citations": true
+      },
+      "youtube_script": {
+        "default_length": "medium",
+        "include_timestamps": true,
+        "include_citations": true
+      },
+      "newsletter": {
+        "default_length": "short",
+        "include_citations": true,
+        "max_sources": 5
+      }
+    }
+  },
+  
+  "advanced_features": {
+    "semantic_chunking": {
+      "enabled": false,
+      "model": "text-embedding-3-small"
+    },
+    "query_expansion": {
+      "enabled": true,
+      "max_queries": 3
+    },
+    "re_ranking": {
+      "enabled": true,
+      "model": "cross-encoder/mmarco-mMiniLMv2-L12-H384-v1"
+    },
+    "citation_tracking": {
+      "enabled": true,
+      "track_modifications": true
+    }
+  }
+}
