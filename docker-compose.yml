@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+  jarvis-rag:
+    build: .
+    container_name: jarvis-rag
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+      - OLLAMA_BASE_URL=http://localhost:11434
+      - APP_API_KEY=${APP_API_KEY:-jarvis-local-key}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - VOYAGE_API_KEY=${VOYAGE_API_KEY:-}
+      - COHERE_API_KEY=${COHERE_API_KEY:-}
+    ports:
+      - "8000:8000"
+      - "11434:11434"
+    volumes:
+      - ./data:/workspace/data
+      - ./docs:/workspace/docs
+      - ./output:/workspace/output
+      - ./logs:/workspace/logs
+      - ./backups:/workspace/backups
+      - ./checkpoints:/workspace/checkpoints
+      - ollama_models:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  ollama_models:
