@@ -1,5 +1,5 @@
 # ── Jarvis RAG — Local Mac M2 Requirements ───────────────────────────────────
-# Python 3.13 + Apple Silicon (MPS). No CUDA, no Airflow, no Whisper.
+# Python 3.13 + Apple Silicon (MPS). No CUDA, no Airflow.
 # Install inside a venv: python3.13 -m venv .venv && source .venv/bin/activate
 # Then: pip install -r requirements-local.txt
 
@@ -39,6 +39,8 @@ lxml>=5.0.0
 trafilatura>=1.12.2
 requests>=2.31.0
 youtube-transcript-api>=0.6.2
+yt-dlp>=2024.1.0
+openai-whisper>=20231117
 podcastparser>=0.6.10
 
 # API Server

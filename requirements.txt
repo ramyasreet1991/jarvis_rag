@@ -39,8 +39,8 @@ lxml==4.9.3
 trafilatura==1.12.2
 requests==2.31.0
 youtube-transcript-api==0.6.2
-podcastparser==0.6.10
-openai-whisper==20231117          # Local podcast transcription (GPU)
+yt-dlp>=2024.1.0
+openai-whisper==20231117          # YouTube + podcast transcription (GPU)
 
 # ── API Server ────────────────────────────────────────────────────────────────
 fastapi==0.115.2

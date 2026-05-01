@@ -82,7 +82,8 @@ class YouTubeExtractor:
 
             transcript = self._get_transcript(video_id)
             if not transcript:
-                transcript = "[Transcript not available]"
+                print(f"  No transcript available for {video_id} (no captions, Whisper failed)")
+                return None
 
             meta = self._get_video_metadata(video_id)
 
@@ -130,7 +131,48 @@ class YouTubeExtractor:
             transcript_list = YouTubeTranscriptApi.get_transcript(video_id)
             return " ".join(item["text"] for item in transcript_list)
         except Exception:
-            return ""
+            print(f"  No captions for {video_id}, falling back to Whisper...")
+            return self._transcribe_video(video_id)
+
+    def _transcribe_video(self, video_id: str) -> str:
+        """Download audio via yt-dlp and transcribe with Whisper when captions unavailable."""
+        audio_path = f"/tmp/yt_{video_id}.mp3"
+        txt_path = f"/tmp/yt_{video_id}.txt"
+        try:
+            dl = subprocess.run(
+                [
+                    "yt-dlp", "-x", "--audio-format", "mp3",
+                    "--audio-quality", "0",
+                    "-o", audio_path,
+                    f"https://www.youtube.com/watch?v={video_id}",
+                ],
+                capture_output=True, text=True, timeout=180,
+            )
+            if dl.returncode != 0 or not Path(audio_path).exists():
+                print(f"  yt-dlp failed for {video_id}: {dl.stderr[:200]}")
+                return ""
+
+            subprocess.run(
+                [
+                    "whisper", audio_path,
+                    "--model", "base",
+                    "--language", "en",
+                    "--output_format", "txt",
+                    "--output_dir", "/tmp/",
+                ],
+                capture_output=True, text=True, timeout=600,
+            )
+
+            if Path(txt_path).exists():
+                transcript = Path(txt_path).read_text().strip()
+                Path(audio_path).unlink(missing_ok=True)
+                Path(txt_path).unlink(missing_ok=True)
+                return transcript
+        except Exception as e:
+            print(f"  Whisper transcription failed for {video_id}: {e}")
+        finally:
+            Path(audio_path).unlink(missing_ok=True)
+        return ""
 
     def _get_video_metadata(self, video_id: str) -> Dict:
         try:
