@@ -1,49 +1,81 @@
-# Core
+# ── Core ─────────────────────────────────────────────────────────────────────
 python-dotenv==1.0.1
 pydantic==2.9.2
+pydantic-settings==2.1.0
+numpy==1.26.4
+pandas==2.1.3
+python-dateutil==2.8.2
+pytz==2023.3
 
-# LangChain & RAG
+# ── LangChain & RAG (Phase 1 — Local Stack) ──────────────────────────────────
 langchain==0.3.2
 langchain-community==0.3.2
 langchain-core==0.3.9
 langchain-text-splitters==0.3.2
 
-# Vector DB
-chromadb==0.5.7
+# ── LlamaIndex (Phase 2 — Cloud Stack) ───────────────────────────────────────
+llama-index==0.9.45
+llama-index-embeddings-openai==0.1.6
+llama-index-vector-stores-pinecone==0.1.4
+llama-index-llms-openai==0.1.5
 
-# Embeddings (local + API)
+# ── Vector Databases ──────────────────────────────────────────────────────────
+chromadb==0.5.7                   # Phase 1 — local
+pinecone-client==3.0.2            # Phase 2 — cloud
+qdrant-client==1.11.3             # Phase 2 — alternative cloud
+
+# ── Embeddings & Models (Local) ───────────────────────────────────────────────
 sentence-transformers==3.0.1
 transformers==4.44.2
 torch==2.4.0
 
-# Retrieval
+# ── Retrieval ─────────────────────────────────────────────────────────────────
 rank-bm25==0.2.2
-numpy==1.26.4
 
-# Content Extraction
+# ── Content Extraction ────────────────────────────────────────────────────────
 feedparser==6.0.11
 beautifulsoup4==4.12.3
+lxml==4.9.3
 trafilatura==1.12.2
+requests==2.31.0
 youtube-transcript-api==0.6.2
 podcastparser==0.6.10
+openai-whisper==20231117          # Local podcast transcription (GPU)
 
-# Whisper (for podcast transcription)
-openai-whisper==20231117
-
-# API
+# ── API Server ────────────────────────────────────────────────────────────────
 fastapi==0.115.2
-uvicorn==0.31.1
+uvicorn[standard]==0.31.1
 httpx==0.27.2
 
-# Evaluation
+# ── Orchestration (Airflow DAG) ───────────────────────────────────────────────
+apache-airflow==2.7.3
+apache-airflow-providers-postgres==5.10.1
+apache-airflow-providers-python==4.10.1
+
+# ── Database (Metadata Index) ─────────────────────────────────────────────────
+psycopg2-binary==2.9.9
+sqlalchemy==2.0.23
+
+# ── Phase 2 — Cloud API Upgrades ─────────────────────────────────────────────
+anthropic==0.34.2                 # Anthropic Claude (LLM fallback)
+voyageai==0.2.3                   # Voyage AI embeddings
+cohere==5.9.4                     # Cohere reranking
+# openai                          # Uncomment for OpenAI embeddings + GPT-4
+
+# ── Evaluation ────────────────────────────────────────────────────────────────
 ragas==0.2.0
 datasets==3.0.1
 
-# Optional API upgrades (Phase 2)
-anthropic==0.34.2
-voyageai==0.2.3
-cohere==5.9.4
-qdrant-client==1.11.3
-
-# Monitoring
+# ── Monitoring ────────────────────────────────────────────────────────────────
 langfuse==2.51.0
+python-logging-loki==0.3.2
+
+# ── Testing ───────────────────────────────────────────────────────────────────
+pytest==7.4.3
+pytest-asyncio==0.21.1
+
+# ── Development ───────────────────────────────────────────────────────────────
+black==23.12.0
+flake8==6.1.0
+mypy==1.7.1
+pre-commit==3.5.0

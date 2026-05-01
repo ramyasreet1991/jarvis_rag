@@ -10,7 +10,7 @@ from typing import List, Dict, Optional, Any
 from dataclasses import dataclass
 
 from langchain_core.documents import Document
-from langchain_community.llms import Ollama
+from langchain_ollama import OllamaLLM as Ollama
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
@@ -94,9 +94,7 @@ URL: {url}
             parts.append(entry)
             total += len(entry)
 
-        return "
----
-".join(parts)
+        return "\n---\n".join(parts)
 
     def _extract_sources(self, docs: List[Document]) -> List[Dict]:
         """Extract source metadata for citations."""
@@ -181,12 +179,15 @@ Script:"""
 
     # ── Blog Post ────────────────────────────────────────────────────────────
 
-    def generate_blog_post(self, topic: str, docs: List[Document], 
-                          tone: str = "technical") -> GeneratedContent:
+    def generate_blog_post(self, topic: str, docs: List[Document],
+                          tone: str = "technical",
+                          length: str = "medium") -> GeneratedContent:
         """Generate an 800-1500 word blog post."""
         context = self._build_context(docs, max_chars=6000)
 
+        word_target = {"short": "400-600", "medium": "800-1200", "long": "1200-1800"}.get(length, "800-1200")
         prompt = f"""Write a {tone} blog post about: {topic}
+Target length: {word_target} words
 
 VERIFIED CONTEXT:
 {context}
@@ -345,10 +346,11 @@ Newsletter:"""
         match = re.search(r'^#\s+(.+)$', text, re.MULTILINE)
         return match.group(1) if match else None
 
-    def save_content(self, content: GeneratedContent, 
-                    output_dir: str = "/workspace/output"):
+    def save_content(self, content: GeneratedContent,
+                    output_dir: Optional[str] = None):
         """Save generated content to file."""
         from pathlib import Path
+        output_dir = output_dir or CONFIG.OUTPUT_DIR
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
         filename = f"{content.content_type}_{datetime.now().strftime('%Y%m%d_%H%M')}.json"
@@ -398,13 +400,11 @@ if __name__ == "__main__":
     shorts = generator.generate_youtube_shorts("Kubernetes in 2026", test_docs)
     print(f"   ✅ {shorts.word_count} words, avg credibility: {shorts.credibility_avg}")
 
-    print("
-📝 Generating Blog Post...")
+    print("\n📝 Generating Blog Post...")
     blog = generator.generate_blog_post("Why Kubernetes Still Dominates", test_docs)
     print(f"   ✅ {blog.word_count} words, avg credibility: {blog.credibility_avg}")
 
-    print("
-🐦 Generating Twitter Thread...")
+    print("\n🐦 Generating Twitter Thread...")
     thread = generator.generate_twitter_thread("Kubernetes myths", test_docs)
     print(f"   ✅ {thread.word_count} words, avg credibility: {thread.credibility_avg}")
 
