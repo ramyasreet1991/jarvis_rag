@@ -36,7 +36,14 @@ mkdir -p /workspace/data/chroma_db \
          /workspace/backups
 echo "  ✅ Directories ready"
 
-# ── 4. Ollama ─────────────────────────────────────────────────────────────────
+# ── 4. System dependencies ───────────────────────────────────────────────────
+echo ""
+echo "▶ Installing system dependencies..."
+apt-get update -qq
+apt-get install -y -qq zstd curl wget
+echo "  ✅ System dependencies ready"
+
+# ── 5. Ollama ─────────────────────────────────────────────────────────────────
 echo ""
 echo "▶ Checking Ollama..."
 if ! command -v ollama &>/dev/null; then
@@ -51,7 +58,7 @@ if ! pgrep -x ollama &>/dev/null; then
 fi
 echo "  ✅ Ollama running"
 
-# ── 5. Pull LLM model ─────────────────────────────────────────────────────────
+# ── 6. Pull LLM model ─────────────────────────────────────────────────────────
 LLM_MODEL=$(grep "^LOCAL_LLM_MODEL=" .env | cut -d= -f2 | tr -d '"')
 LLM_MODEL="${LLM_MODEL:-qwen2.5:32b}"
 
@@ -60,7 +67,7 @@ echo "▶ Pulling LLM: $LLM_MODEL (this may take a few minutes)..."
 ollama pull "$LLM_MODEL"
 echo "  ✅ $LLM_MODEL ready"
 
-# ── 6. HuggingFace embedding model (pre-download) ────────────────────────────
+# ── 7. HuggingFace embedding model (pre-download) ────────────────────────────
 EMBED_MODEL=$(grep "^LOCAL_EMBED_MODEL=" .env | cut -d= -f2 | tr -d '"')
 EMBED_MODEL="${EMBED_MODEL:-BAAI/bge-large-en-v1.5}"
 
@@ -73,7 +80,7 @@ model = SentenceTransformer('$EMBED_MODEL')
 print('  ✅ Embedding model cached')
 "
 
-# ── 7. HuggingFace reranker model (pre-download) ─────────────────────────────
+# ── 8. HuggingFace reranker model (pre-download) ─────────────────────────────
 RERANK_MODEL=$(grep "^LOCAL_RERANK_MODEL=" .env | cut -d= -f2 | tr -d '"')
 RERANK_MODEL="${RERANK_MODEL:-BAAI/bge-reranker-large}"
 
@@ -86,7 +93,7 @@ model = CrossEncoder('$RERANK_MODEL', device='cuda')
 print('  ✅ Reranker model cached')
 "
 
-# ── 8. Verify GPU ─────────────────────────────────────────────────────────────
+# ── 9. Verify GPU ─────────────────────────────────────────────────────────────
 echo ""
 echo "▶ Verifying GPU..."
 python3 -c "
