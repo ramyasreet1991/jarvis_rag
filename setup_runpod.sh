@@ -40,7 +40,7 @@ echo "  ✅ Directories ready"
 echo ""
 echo "▶ Installing system dependencies..."
 apt-get update -qq
-apt-get install -y -qq zstd curl wget
+apt-get install -y -qq zstd curl wget pciutils lshw
 echo "  ✅ System dependencies ready"
 
 # ── 5. Ollama ─────────────────────────────────────────────────────────────────
