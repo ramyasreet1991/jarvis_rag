@@ -124,8 +124,12 @@ def get_transcript_api(video_id: str) -> Optional[str]:
         transcript_list = YouTubeTranscriptApi.get_transcript(
             video_id, languages=["en", "en-US", "en-GB"]
         )
-        return " ".join(chunk["text"] for chunk in transcript_list).strip()
-    except Exception:
+        text = " ".join(chunk["text"] for chunk in transcript_list).strip()
+        if text:
+            print(f"    Transcript API: {len(text.split())} words")
+        return text
+    except Exception as e:
+        print(f"    Transcript API unavailable ({type(e).__name__}) — trying Whisper")
         return None
 
 
@@ -144,7 +148,7 @@ def get_transcript_whisper(video_id: str) -> Optional[str]:
         "--audio-format", "mp3",
         "--audio-quality", "5",
         "-o", audio_path,
-        "--quiet",
+        "--no-playlist",
         url,
     ]
     try:

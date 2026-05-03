@@ -45,7 +45,7 @@ echo "  ✅ OLLAMA_MODELS → $OLLAMA_MODELS"
 echo ""
 echo "▶ Installing system dependencies..."
 apt-get update -qq
-apt-get install -y -qq zstd curl wget pciutils lshw
+apt-get install -y -qq zstd curl wget pciutils lshw ffmpeg nodejs
 echo "  ✅ System dependencies ready"
 
 # ── 5. Ollama ─────────────────────────────────────────────────────────────────
