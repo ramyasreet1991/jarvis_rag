@@ -48,7 +48,7 @@ All settings are in `.env` (copied from `env.runpod`). Key values:
 
 | Variable | Default (RunPod) | Description |
 |---|---|---|
-| `LOCAL_LLM_MODEL` | `qwen2.5:32b` | Main LLM (~18 GB VRAM) |
+| `LOCAL_LLM_MODEL` | `qwen3:32b` | Main LLM (~20 GB VRAM) |
 | `LOCAL_LLM_CTX` | `8192` | Context window (tokens) |
 | `USE_HF_EMBED` | `true` | Direct CUDA embeddings (bypass Ollama) |
 | `LOCAL_EMBED_MODEL` | `BAAI/bge-large-en-v1.5` | Embedding model (1024-dim) |
@@ -70,7 +70,7 @@ LOCAL_LLM_CTX=4096
 
 | Component | Model | VRAM |
 |---|---|---|
-| LLM | qwen2.5:32b (Q4) | ~18 GB |
+| LLM | qwen3:32b (Q4) | ~20 GB |
 | Embeddings | bge-large-en-v1.5 | ~1 GB |
 | Reranker | bge-reranker-large | ~1 GB |
 | KV Cache + buffers | — | ~4 GB |
@@ -78,10 +78,12 @@ LOCAL_LLM_CTX=4096
 
 **Alternative LLMs that fit in 24 GB:**
 ```
-llama3.1:8b         ~5 GB   (fast, good for testing)
-mistral:7b          ~4 GB   (fast, general purpose)
-deepseek-r1:14b     ~8 GB   (strong reasoning)
-qwen2.5:32b         ~18 GB  (recommended — best quality/fit)
+qwen3:8b            ~5 GB   (fast, good for testing)
+qwen3:14b           ~9 GB   (good balance)
+qwen3:30b-a3b       ~18 GB  (MoE — activates 3B params, very fast)
+qwen3:32b           ~20 GB  (recommended — best quality)
+qwen2.5:32b         ~18 GB  (previous gen)
+llama3.1:8b         ~5 GB   (fast fallback)
 ```
 
 ---

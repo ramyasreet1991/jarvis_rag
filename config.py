@@ -57,9 +57,9 @@ class JarvisConfig:
 
     # LLM — default 8b for M2, override to 32b+ in RunPod .env
     LOCAL_LLM_MODEL: str = field(
-        default_factory=lambda: _default("LOCAL_LLM_MODEL", "llama3.1:8b"))
+        default_factory=lambda: _default("LOCAL_LLM_MODEL", "qwen3:8b"))
     LOCAL_LLM_FALLBACK: str = field(
-        default_factory=lambda: _default("LOCAL_LLM_FALLBACK", "mistral:7b"))
+        default_factory=lambda: _default("LOCAL_LLM_FALLBACK", "llama3.1:8b"))
     LOCAL_LLM_LIGHTWEIGHT: str = field(
         default_factory=lambda: _default("LOCAL_LLM_LIGHTWEIGHT", "llama3.2:latest"))
     LOCAL_LLM_CTX: int = field(
