@@ -48,6 +48,7 @@ SOURCE_FILES=(
     setup_runpod.sh
     start_runpod.sh
     test_api.sh
+    ingest_latest.py
     RUNPOD_README.md
 
     # Docs
