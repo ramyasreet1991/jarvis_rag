@@ -25,6 +25,30 @@ from youtube_transcript_api import YouTubeTranscriptApi
 from source_vetter import Source, TrustTier
 
 
+# ── Shared Whisper helper (faster-whisper, GPU int8) ──────────────────────────
+
+def _whisper_transcribe(audio_path: str, model_size: str = "base") -> str:
+    """
+    Transcribe an audio file using faster-whisper.
+    Uses CUDA + int8 on GPU, falls back to CPU float32.
+    Shared by YouTubeExtractor and PodcastExtractor.
+    """
+    try:
+        from faster_whisper import WhisperModel
+        import torch
+        if torch.cuda.is_available():
+            device, compute_type = "cuda", "int8"
+        else:
+            device, compute_type = "cpu", "float32"
+
+        model = WhisperModel(model_size, device=device, compute_type=compute_type)
+        segments, _ = model.transcribe(audio_path, language="en")
+        return " ".join(seg.text.strip() for seg in segments)
+    except Exception as e:
+        print(f"  faster-whisper transcription error: {e}")
+        return ""
+
+
 # ── Shared Data Model ─────────────────────────────────────────────────────────
 
 @dataclass
@@ -135,9 +159,8 @@ class YouTubeExtractor:
             return self._transcribe_video(video_id)
 
     def _transcribe_video(self, video_id: str) -> str:
-        """Download audio via yt-dlp and transcribe with Whisper when captions unavailable."""
+        """Download audio via yt-dlp and transcribe with faster-whisper (GPU int8)."""
         audio_path = f"/tmp/yt_{video_id}.mp3"
-        txt_path = f"/tmp/yt_{video_id}.txt"
         try:
             dl = subprocess.run(
                 [
@@ -152,22 +175,7 @@ class YouTubeExtractor:
                 print(f"  yt-dlp failed for {video_id}: {dl.stderr[:200]}")
                 return ""
 
-            subprocess.run(
-                [
-                    "whisper", audio_path,
-                    "--model", "base",
-                    "--language", "en",
-                    "--output_format", "txt",
-                    "--output_dir", "/tmp/",
-                ],
-                capture_output=True, text=True, timeout=600,
-            )
-
-            if Path(txt_path).exists():
-                transcript = Path(txt_path).read_text().strip()
-                Path(audio_path).unlink(missing_ok=True)
-                Path(txt_path).unlink(missing_ok=True)
-                return transcript
+            return _whisper_transcribe(audio_path)
         except Exception as e:
             print(f"  Whisper transcription failed for {video_id}: {e}")
         finally:
@@ -261,24 +269,20 @@ class PodcastExtractor:
         return None
 
     def _transcribe_audio(self, audio_url: str) -> str:
-        """Download and transcribe audio via local Whisper (GPU-accelerated)."""
+        """Download and transcribe podcast audio via faster-whisper (GPU int8)."""
+        audio_path = f"/tmp/podcast_{hashlib.md5(audio_url.encode()).hexdigest()[:8]}.mp3"
         try:
-            audio_path = f"/tmp/podcast_{hashlib.md5(audio_url.encode()).hexdigest()[:8]}.mp3"
             subprocess.run(
                 ["wget", "-q", "-O", audio_path, audio_url],
                 capture_output=True, timeout=60,
             )
-            subprocess.run(
-                ["whisper", audio_path, "--model", "base", "--language", "en",
-                 "--output_format", "txt", "--output_dir", "/tmp/"],
-                capture_output=True, text=True, timeout=300,
-            )
-            txt_path = audio_path.replace(".mp3", ".txt")
-            if Path(txt_path).exists():
-                with open(txt_path) as f:
-                    return f.read().strip()
+            if not Path(audio_path).exists():
+                return ""
+            return _whisper_transcribe(audio_path)
         except Exception as e:
             print(f"Transcription failed: {e}")
+        finally:
+            Path(audio_path).unlink(missing_ok=True)
         return ""
 
     def _parse_rss_date(self, date_str: Optional[str]) -> Optional[datetime]:
