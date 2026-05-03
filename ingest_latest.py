@@ -118,16 +118,36 @@ CHANNELS = {
 # ── Transcript Extraction ─────────────────────────────────────────────────────
 
 def get_transcript_api(video_id: str) -> Optional[str]:
-    """Try YouTube transcript API first (fast, no audio download)."""
+    """Try YouTube transcript API first (fast, no audio download).
+    Supports both youtube-transcript-api <0.7 (class method) and >=0.7 (instance method).
+    """
     try:
         from youtube_transcript_api import YouTubeTranscriptApi
-        transcript_list = YouTubeTranscriptApi.get_transcript(
-            video_id, languages=["en", "en-US", "en-GB"]
-        )
-        text = " ".join(chunk["text"] for chunk in transcript_list).strip()
+
+        # ── v0.7+ API: instance-based ──────────────────────────────────────────
+        if hasattr(YouTubeTranscriptApi, '__call__') or not hasattr(YouTubeTranscriptApi, 'get_transcript'):
+            api = YouTubeTranscriptApi()
+            try:
+                # list() → find English transcript → fetch()
+                tl = api.list(video_id)
+                transcript = tl.find_transcript(["en", "en-US", "en-GB"]).fetch()
+            except Exception:
+                # fallback: fetch directly (auto-generated captions included)
+                transcript = api.fetch(video_id)
+            text = " ".join(
+                (seg.text if hasattr(seg, "text") else seg["text"])
+                for seg in transcript
+            ).strip()
+        else:
+            # ── <0.7 API: class method ─────────────────────────────────────────
+            transcript = YouTubeTranscriptApi.get_transcript(
+                video_id, languages=["en", "en-US", "en-GB"]
+            )
+            text = " ".join(chunk["text"] for chunk in transcript).strip()
+
         if text:
             print(f"    Transcript API: {len(text.split())} words")
-        return text
+        return text or None
     except Exception as e:
         print(f"    Transcript API unavailable ({type(e).__name__}) — trying Whisper")
         return None
