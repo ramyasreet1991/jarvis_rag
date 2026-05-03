@@ -26,6 +26,24 @@ if ! pgrep -x ollama &>/dev/null; then
     echo "  ✅ Ollama started"
 fi
 
+# ── Start Qdrant server (port 6333 — Web UI at /dashboard) ───────────────────
+if ! pgrep -x qdrant &>/dev/null; then
+    echo "▶ Starting Qdrant server..."
+    mkdir -p /workspace/data/qdrant_db /workspace/logs
+    nohup qdrant --config-path "$PROJECT_DIR/qdrant_config.yaml" \
+        > /workspace/logs/qdrant.log 2>&1 &
+    # Wait until Qdrant HTTP is ready
+    for i in $(seq 1 15); do
+        if curl -sf http://localhost:6333/healthz &>/dev/null; then
+            echo "  ✅ Qdrant ready  → http://localhost:6333/dashboard"
+            break
+        fi
+        sleep 1
+    done
+else
+    echo "  ✅ Qdrant already running"
+fi
+
 # ── Check GPU ─────────────────────────────────────────────────────────────────
 python3 -c "
 import torch
@@ -56,10 +74,19 @@ echo "  ✅ Scheduler started (PID $SCHED_PID, every 4h)"
 echo ""
 echo "══════════════════════════════════════════════"
 echo "  Starting Jarvis RAG API on port $PORT"
-echo "  Docs:   http://localhost:$PORT/docs"
-echo "  Health: http://localhost:$PORT/health"
+echo ""
+echo "  API     → http://localhost:$PORT/docs"
+echo "  Health  → http://localhost:$PORT/health"
+echo "  Qdrant  → http://localhost:6333/dashboard"
+echo ""
+echo "  RunPod Web UI access:"
+echo "    Expose port 6333 → click HTTP Service link + /dashboard"
+echo "  SSH tunnel:"
+echo "    ssh -L 6333:localhost:6333 root@<pod-ip>"
+echo "    then → http://localhost:6333/dashboard"
+echo ""
 echo "  Scheduler: PID $SCHED_PID (every 4h)"
-echo "  Logs:   /workspace/logs/scheduler.log"
+echo "  Logs:   /workspace/logs/"
 echo "══════════════════════════════════════════════"
 echo ""
 

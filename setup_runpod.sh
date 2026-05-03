@@ -53,6 +53,23 @@ if ! node --version 2>/dev/null | grep -qE 'v(1[4-9]|[2-9][0-9])'; then
 fi
 echo "  ✅ System dependencies ready"
 
+# ── 4b. Qdrant server binary ─────────────────────────────────────────────────
+echo ""
+echo "▶ Installing Qdrant server..."
+if ! command -v qdrant &>/dev/null; then
+    QDRANT_VER=$(curl -s https://api.github.com/repos/qdrant/qdrant/releases/latest \
+        | grep '"tag_name"' | cut -d'"' -f4)
+    echo "  Downloading Qdrant $QDRANT_VER..."
+    curl -fsSL \
+        "https://github.com/qdrant/qdrant/releases/download/${QDRANT_VER}/qdrant-x86_64-unknown-linux-gnu.tar.gz" \
+        | tar xz -C /usr/local/bin/
+    chmod +x /usr/local/bin/qdrant
+    echo "  ✅ Qdrant $QDRANT_VER installed"
+else
+    echo "  ✅ Qdrant already installed ($(qdrant --version 2>/dev/null || echo 'version unknown'))"
+fi
+mkdir -p /workspace/data/qdrant_db
+
 # ── 5. Ollama ─────────────────────────────────────────────────────────────────
 echo ""
 echo "▶ Checking Ollama..."

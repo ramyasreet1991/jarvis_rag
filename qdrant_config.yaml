@@ -1,0 +1,19 @@
+# ── Qdrant Server Config — RunPod RTX 4090 ────────────────────────────────────
+# Storage on network volume (/workspace) so data survives pod restarts
+storage:
+  storage_path: /workspace/data/qdrant_db
+
+# Bind on all interfaces so RunPod HTTP service proxy can reach it
+service:
+  host: 0.0.0.0
+  http_port: 6333
+  grpc_port: 6334
+  # No auth needed — RunPod pod is already isolated
+  api_key: ""
+
+# CPU-only indexing — GPU VRAM is reserved for qwen3:32b + bge-m3 + reranker
+# Uncomment ONLY if running a dedicated vector-search pod (no LLM on same GPU)
+# gpu:
+#   indexing: true
+
+log_level: INFO
