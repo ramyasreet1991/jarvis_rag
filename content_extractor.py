@@ -27,10 +27,11 @@ from source_vetter import Source, TrustTier
 
 # ── Shared Whisper helper (faster-whisper, GPU int8) ──────────────────────────
 
-def _whisper_transcribe(audio_path: str, model_size: str = "base") -> str:
+def _whisper_transcribe(audio_path: str, model_size: str = "large-v3") -> str:
     """
     Transcribe an audio file using faster-whisper.
-    Uses CUDA + int8 on GPU, falls back to CPU float32.
+    - GPU (CUDA): large-v3 + int8 — ~8x real-time on RTX 4090, WER ~2.7%
+    - CPU fallback: base + float32 — lighter for M2/non-GPU environments
     Shared by YouTubeExtractor and PodcastExtractor.
     """
     try:
@@ -39,6 +40,8 @@ def _whisper_transcribe(audio_path: str, model_size: str = "base") -> str:
         if torch.cuda.is_available():
             device, compute_type = "cuda", "int8"
         else:
+            # Fall back to base model on CPU — large-v3 is too slow without GPU
+            model_size = "base"
             device, compute_type = "cpu", "float32"
 
         model = WhisperModel(model_size, device=device, compute_type=compute_type)

@@ -80,7 +80,7 @@ class JarvisConfig:
     # Reranker — small/fast for M2, upgrade to bge-reranker-large on RTX 4090
     LOCAL_RERANK_MODEL: str = field(
         default_factory=lambda: _default(
-            "LOCAL_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"))
+            "LOCAL_RERANK_MODEL", "BAAI/bge-reranker-v2-m3"))
     LOCAL_RERANK_DEVICE: str = field(default_factory=_detect_device)
 
     # === CLOUD LLM (Phase 2 — Selective Upgrades) ===
