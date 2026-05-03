@@ -48,12 +48,14 @@ uvicorn[standard]==0.31.1
 httpx==0.27.2
 
 # ── Orchestration (Airflow DAG) ───────────────────────────────────────────────
-apache-airflow==2.7.3
-apache-airflow-providers-postgres==5.10.1
-apache-airflow-providers-python==4.10.1
+# Airflow runs separately (not on RunPod). Install only if running the DAG:
+#   pip install apache-airflow==2.7.3 apache-airflow-providers-postgres==5.10.1
+# apache-airflow==2.7.3
+# apache-airflow-providers-postgres==5.10.1
+# apache-airflow-providers-python==4.10.1
 
 # ── Database (Metadata Index) ─────────────────────────────────────────────────
-psycopg2-binary==2.9.9
+# psycopg2-binary==2.9.9
 sqlalchemy==2.0.23
 
 # ── Phase 2 — Cloud API Upgrades ─────────────────────────────────────────────
