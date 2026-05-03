@@ -45,7 +45,12 @@ echo "  ✅ OLLAMA_MODELS → $OLLAMA_MODELS"
 echo ""
 echo "▶ Installing system dependencies..."
 apt-get update -qq
-apt-get install -y -qq zstd curl wget pciutils lshw ffmpeg nodejs
+apt-get install -y -qq zstd curl wget pciutils lshw ffmpeg
+# Node.js 20 LTS (yt-dlp requires 14+; Ubuntu ships 12 which is too old)
+if ! node --version 2>/dev/null | grep -qE 'v(1[4-9]|[2-9][0-9])'; then
+    curl -fsSL https://deb.nodesource.com/setup_20.x | bash - >/dev/null 2>&1
+    apt-get install -y -qq nodejs
+fi
 echo "  ✅ System dependencies ready"
 
 # ── 5. Ollama ─────────────────────────────────────────────────────────────────

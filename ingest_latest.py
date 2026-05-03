@@ -169,6 +169,7 @@ def get_transcript_whisper(video_id: str) -> Optional[str]:
         "--audio-quality", "5",
         "-o", audio_path,
         "--no-playlist",
+        "--js-runtimes", "node,deno,phantomjs",
         url,
     ]
     try:
@@ -227,6 +228,7 @@ def list_recent_videos(handle: str, days: int, max_videos: int) -> list:
         "--print", "%(id)s\t%(title)s\t%(upload_date)s\t%(duration)s",
         "--no-warnings",
         "--quiet",
+        "--js-runtimes", "node,deno,phantomjs",
         f"https://www.youtube.com/{handle}/videos",
     ]
 

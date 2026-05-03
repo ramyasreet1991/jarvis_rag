@@ -303,6 +303,7 @@ def _yt_list_recent(handle: str, days: int, max_videos: int) -> List[dict]:
         "--dateafter", cutoff_str,
         "--print", "%(id)s\t%(title)s\t%(upload_date)s\t%(duration)s",
         "--no-warnings", "--quiet",
+        "--js-runtimes", "node,deno,phantomjs",
         f"https://www.youtube.com/{handle}/videos",
     ]
     try:
@@ -355,7 +356,8 @@ def _yt_transcript(video_id: str) -> Optional[str]:
     audio_path = os.path.join(tempfile.gettempdir(), f"{video_id}.mp3")
     url = f"https://www.youtube.com/watch?v={video_id}"
     cmd = ["yt-dlp", "--extract-audio", "--audio-format", "mp3",
-           "--audio-quality", "5", "-o", audio_path, "--no-playlist", url]
+           "--audio-quality", "5", "-o", audio_path, "--no-playlist",
+           "--js-runtimes", "node,deno,phantomjs", url]
     try:
         subprocess.run(cmd, check=True, timeout=120, capture_output=True)
     except Exception as e:
