@@ -41,3 +41,4 @@ htmlcov/
 
 # Jupyter
 .ipynb_checkpoints/
+artifact.zip
