@@ -173,7 +173,9 @@ class Embedder:
 
 
 class VectorStore:
-    """ChromaDB (local) or Qdrant (cloud) vector store."""
+    """ChromaDB or Qdrant (embedded) or Pinecone (cloud) vector store."""
+
+    COLLECTION = "jarvis_rag"
 
     def __init__(self):
         self.config = CONFIG.get_vectordb_config()
@@ -181,17 +183,53 @@ class VectorStore:
 
         if provider == "chromadb":
             import chromadb
-
             path = self.config["path"]
             Path(path).mkdir(parents=True, exist_ok=True)
-
-            # chromadb >= 0.4 API: PersistentClient for on-disk storage
             self.client = chromadb.PersistentClient(path=path)
             self.collection = self.client.get_or_create_collection(
                 name=self.config["collection"],
                 metadata={"hnsw:space": "cosine"},
             )
             self._provider = "chromadb"
+
+        elif provider == "qdrant":
+            from qdrant_client import QdrantClient
+            from qdrant_client.models import (
+                Distance, VectorParams, PointStruct,
+                PayloadSchemaType,
+            )
+            # Embedded mode: path= writes to disk; no separate server needed
+            path = self.config.get("path", "/workspace/data/qdrant_db")
+            url  = self.config.get("url")
+            if url:
+                # Cloud / remote Qdrant
+                self.client = QdrantClient(url=url, api_key=self.config.get("api_key"))
+            else:
+                # Local embedded — persists to /workspace
+                Path(path).mkdir(parents=True, exist_ok=True)
+                self.client = QdrantClient(path=path)
+
+            dims = CONFIG.LOCAL_EMBED_DIMS
+            # Create collection if it doesn't exist yet
+            existing = [c.name for c in self.client.get_collections().collections]
+            if self.COLLECTION not in existing:
+                self.client.create_collection(
+                    collection_name=self.COLLECTION,
+                    vectors_config=VectorParams(size=dims, distance=Distance.COSINE),
+                )
+                # Index payload fields for fast filtering
+                for field, schema in [
+                    ("credibility_score", PayloadSchemaType.FLOAT),
+                    ("source_type",       PayloadSchemaType.KEYWORD),
+                    ("source_tier",       PayloadSchemaType.KEYWORD),
+                    ("published",         PayloadSchemaType.KEYWORD),
+                ]:
+                    self.client.create_payload_index(
+                        collection_name=self.COLLECTION,
+                        field_name=field,
+                        field_schema=schema,
+                    )
+            self._provider = "qdrant"
 
         elif provider == "pinecone":
             from pinecone import Pinecone
@@ -207,9 +245,9 @@ class VectorStore:
             self._provider = "pinecone"
 
         else:
-            from qdrant_client import QdrantClient
-            self.client = QdrantClient(url=self.config["url"], api_key=self.config["api_key"])
-            self._provider = "qdrant"
+            raise ValueError(f"Unknown vector DB provider: {provider}")
+
+    # ── Upsert ────────────────────────────────────────────────────────────────
 
     def upsert_chunks(self, chunks: List[Chunk], embeddings: List[List[float]]):
         if self._provider == "chromadb":
@@ -226,11 +264,36 @@ class VectorStore:
                     "url": c.url,
                     "chunk_index": c.chunk_index,
                     "content_hash": c.content_hash,
-                    # Chroma requires scalar metadata values; serialize list
                     "categories": json.dumps(c.categories),
                 } for c in chunks],
                 ids=[f"{c.content_hash}_{c.chunk_index}" for c in chunks],
             )
+
+        elif self._provider == "qdrant":
+            from qdrant_client.models import PointStruct
+            points = [
+                PointStruct(
+                    id=abs(hash(f"{c.content_hash}_{c.chunk_index}")) % (2**63),
+                    vector=emb,
+                    payload={
+                        "text": c.text,
+                        "title": c.title,
+                        "source_name": c.source_name,
+                        "source_tier": c.source_tier,
+                        "source_type": c.source_type,
+                        "credibility_score": c.credibility_score,
+                        "published": c.published,
+                        "url": c.url,
+                        "chunk_index": c.chunk_index,
+                        "content_hash": c.content_hash,
+                        "categories": c.categories,
+                    },
+                )
+                for c, emb in zip(chunks, embeddings)
+            ]
+            self.client.upsert(collection_name=self.COLLECTION, points=points)
+
+    # ── Dense search ──────────────────────────────────────────────────────────
 
     def dense_search(
         self,
@@ -240,32 +303,60 @@ class VectorStore:
         source_type: Optional[str] = None,
         date_range_days: Optional[int] = None,
     ) -> List[Document]:
+
         if self._provider == "chromadb":
             where: Dict[str, Any] = {"credibility_score": {"$gte": min_credibility}}
             if source_type:
                 where["source_type"] = {"$eq": source_type}
-
             results = self.collection.query(
                 query_embeddings=[query_embedding],
                 n_results=min(top_k, self.collection.count() or 1),
                 where=where,
             )
-
             docs = []
             if results["documents"] and results["documents"][0]:
                 cutoff = None
                 if date_range_days:
                     cutoff = (datetime.now() - timedelta(days=date_range_days)).isoformat()
-
                 for text, meta in zip(results["documents"][0], results["metadatas"][0]):
                     if cutoff and meta.get("published", "") < cutoff:
                         continue
-                    # Deserialize categories back to list
                     if "categories" in meta and isinstance(meta["categories"], str):
                         meta["categories"] = json.loads(meta["categories"])
                     docs.append(Document(page_content=text, metadata=meta))
             return docs
+
+        elif self._provider == "qdrant":
+            from qdrant_client.models import Filter, FieldCondition, Range, MatchValue
+
+            must = [FieldCondition(key="credibility_score",
+                                   range=Range(gte=min_credibility))]
+            if source_type:
+                must.append(FieldCondition(key="source_type",
+                                           match=MatchValue(value=source_type)))
+            if date_range_days:
+                cutoff = (datetime.now() - timedelta(days=date_range_days)).isoformat()
+                must.append(FieldCondition(key="published",
+                                           range=Range(gte=cutoff)))
+
+            results = self.client.search(
+                collection_name=self.COLLECTION,
+                query_vector=query_embedding,
+                query_filter=Filter(must=must) if must else None,
+                limit=top_k,
+                with_payload=True,
+            )
+            return [
+                Document(
+                    page_content=r.payload.get("text", ""),
+                    metadata={k: v for k, v in r.payload.items() if k != "text"},
+                )
+                for r in results
+            ]
+
         return []
+
+    # ── Bulk fetch (for BM25 + stats) ─────────────────────────────────────────
 
     def get_all_chunks(self) -> List[Document]:
         if self._provider == "chromadb":
@@ -279,16 +370,53 @@ class VectorStore:
                     meta["categories"] = json.loads(meta["categories"])
                 docs.append(Document(page_content=text, metadata=meta))
             return docs
+
+        elif self._provider == "qdrant":
+            total = self.client.get_collection(self.COLLECTION).points_count
+            if not total:
+                return []
+            docs, offset = [], None
+            while True:
+                batch, next_offset = self.client.scroll(
+                    collection_name=self.COLLECTION,
+                    limit=500,
+                    offset=offset,
+                    with_payload=True,
+                    with_vectors=False,
+                )
+                for pt in batch:
+                    docs.append(Document(
+                        page_content=pt.payload.get("text", ""),
+                        metadata={k: v for k, v in pt.payload.items() if k != "text"},
+                    ))
+                if next_offset is None:
+                    break
+                offset = next_offset
+            return docs
+
         return []
+
+    # ── Count / delete ────────────────────────────────────────────────────────
 
     def count(self) -> int:
         if self._provider == "chromadb":
             return self.collection.count()
+        elif self._provider == "qdrant":
+            return self.client.get_collection(self.COLLECTION).points_count or 0
         return 0
 
     def delete_by_source(self, source_name: str):
         if self._provider == "chromadb":
             self.collection.delete(where={"source_name": source_name})
+        elif self._provider == "qdrant":
+            from qdrant_client.models import Filter, FieldCondition, MatchValue
+            self.client.delete(
+                collection_name=self.COLLECTION,
+                points_selector=Filter(must=[
+                    FieldCondition(key="source_name",
+                                   match=MatchValue(value=source_name))
+                ]),
+            )
 
 
 class HybridRetriever:

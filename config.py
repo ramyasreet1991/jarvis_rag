@@ -73,9 +73,16 @@ class JarvisConfig:
     LOCAL_EMBED_DIMS: int = field(
         default_factory=lambda: int(_default("LOCAL_EMBED_DIMS", "768")))
 
+    # Vector DB provider: "chromadb" | "qdrant" | "pinecone"
+    VECTOR_DB_PROVIDER: str = field(
+        default_factory=lambda: _default("VECTOR_DB_PROVIDER", "qdrant"))
+
     CHROMA_PATH: str = field(
         default_factory=lambda: _default("CHROMA_PATH", "./data/chroma_db"))
     CHROMA_COLLECTION: str = "jarvis_tech_kb"
+
+    QDRANT_PATH: str = field(
+        default_factory=lambda: _default("QDRANT_PATH", "/workspace/data/qdrant_db"))
 
     # Reranker — small/fast for M2, upgrade to bge-reranker-large on RTX 4090
     LOCAL_RERANK_MODEL: str = field(
@@ -252,13 +259,23 @@ class JarvisConfig:
         }
 
     def get_vectordb_config(self) -> Dict[str, Any]:
-        if self.USE_LOCAL_VECTORDB:
+        provider = self.VECTOR_DB_PROVIDER
+        if provider == "chromadb":
             return {
                 "provider": "chromadb",
                 "path": self.CHROMA_PATH,
                 "collection": self.CHROMA_COLLECTION,
             }
-        if self.PINECONE_API_KEY:
+        if provider == "qdrant":
+            return {
+                "provider": "qdrant",
+                # Embedded (no URL) → local disk; URL set → cloud/remote Qdrant
+                "path": self.QDRANT_PATH if not self.QDRANT_URL else None,
+                "url": self.QDRANT_URL,
+                "api_key": self.QDRANT_API_KEY,
+                "collection": self.QDRANT_COLLECTION,
+            }
+        if provider == "pinecone" or self.PINECONE_API_KEY:
             return {
                 "provider": "pinecone",
                 "api_key": self.PINECONE_API_KEY,
@@ -268,11 +285,11 @@ class JarvisConfig:
                 "metric": self.PINECONE_METRIC,
                 "namespaces": self.PINECONE_NAMESPACES,
             }
+        # Fallback
         return {
-            "provider": "qdrant",
-            "url": self.QDRANT_URL,
-            "api_key": self.QDRANT_API_KEY,
-            "collection": self.QDRANT_COLLECTION,
+            "provider": "chromadb",
+            "path": self.CHROMA_PATH,
+            "collection": self.CHROMA_COLLECTION,
         }
 
     def get_reranker_config(self) -> Dict[str, Any]:

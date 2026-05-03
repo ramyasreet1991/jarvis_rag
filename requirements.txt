@@ -27,7 +27,7 @@ langchain-ollama>=0.2.0
 # ── Vector Databases ──────────────────────────────────────────────────────────
 chromadb>=0.6.3
 # pinecone-client>=3.0.2            # Phase 2 — uncomment if using Pinecone
-# qdrant-client>=1.11.3             # Phase 2 — uncomment if using Qdrant
+qdrant-client>=1.11.3
 
 # ── Embeddings & Models ───────────────────────────────────────────────────────
 sentence-transformers>=3.0.1
