@@ -32,7 +32,7 @@ chromadb>=0.6.3
 # ── Embeddings & Models ───────────────────────────────────────────────────────
 sentence-transformers>=3.0.1
 transformers>=4.44.2
-torch>=2.4.0
+torch>=2.6.0       # v2.6+ required due to CVE-2025-32434 (torch.load vulnerability)
 
 # ── Retrieval ─────────────────────────────────────────────────────────────────
 rank-bm25>=0.2.2
