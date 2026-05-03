@@ -33,6 +33,7 @@ from config import CONFIG
 class Chunk:
     """A processed text chunk with rich metadata."""
     text: str
+    title: str
     chunk_index: int
     source_name: str
     source_tier: str
@@ -47,6 +48,7 @@ class Chunk:
         return Document(
             page_content=self.text,
             metadata={
+                "title": self.title,
                 "source_name": self.source_name,
                 "source_tier": self.source_tier,
                 "source_type": self.source_type,
@@ -99,6 +101,7 @@ class Chunker:
         chunks = [
             Chunk(
                 text=doc.page_content,
+                title=content.get("title", content.get("source_name", "unknown")),
                 chunk_index=i,
                 source_name=content.get("source_name", "unknown"),
                 source_tier=content.get("source_tier", "tier_3"),
@@ -214,6 +217,7 @@ class VectorStore:
                 embeddings=embeddings,
                 documents=[c.text for c in chunks],
                 metadatas=[{
+                    "title": c.title,
                     "source_name": c.source_name,
                     "source_tier": c.source_tier,
                     "source_type": c.source_type,

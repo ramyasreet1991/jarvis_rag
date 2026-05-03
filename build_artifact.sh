@@ -49,6 +49,8 @@ SOURCE_FILES=(
     start_runpod.sh
     test_api.sh
     ingest_latest.py
+    ingest_sources.py
+    run_scheduler.py
     RUNPOD_README.md
 
     # Docs
