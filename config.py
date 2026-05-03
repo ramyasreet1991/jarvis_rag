@@ -54,21 +54,33 @@ class JarvisConfig:
     # === LOCAL STACK (Phase 1 — Zero API Cost) ===
     OLLAMA_BASE_URL: str = field(
         default_factory=lambda: _default("OLLAMA_BASE_URL", "http://localhost:11434"))
+
+    # LLM — default 8b for M2, override to 32b+ in RunPod .env
     LOCAL_LLM_MODEL: str = field(
         default_factory=lambda: _default("LOCAL_LLM_MODEL", "llama3.1:8b"))
     LOCAL_LLM_FALLBACK: str = field(
         default_factory=lambda: _default("LOCAL_LLM_FALLBACK", "mistral:7b"))
     LOCAL_LLM_LIGHTWEIGHT: str = field(
         default_factory=lambda: _default("LOCAL_LLM_LIGHTWEIGHT", "llama3.2:latest"))
+    LOCAL_LLM_CTX: int = field(
+        default_factory=lambda: int(_default("LOCAL_LLM_CTX", "4096")))
+
+    # Embeddings — Ollama (default) or direct HuggingFace on CUDA (faster on GPU)
+    USE_HF_EMBED: bool = field(
+        default_factory=lambda: _default("USE_HF_EMBED", "false").lower() == "true")
     LOCAL_EMBED_MODEL: str = field(
         default_factory=lambda: _default("LOCAL_EMBED_MODEL", "nomic-embed-text"))
-    LOCAL_EMBED_DIMS: int = 768
+    LOCAL_EMBED_DIMS: int = field(
+        default_factory=lambda: int(_default("LOCAL_EMBED_DIMS", "768")))
 
     CHROMA_PATH: str = field(
         default_factory=lambda: _default("CHROMA_PATH", "./data/chroma_db"))
     CHROMA_COLLECTION: str = "jarvis_tech_kb"
 
-    LOCAL_RERANK_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    # Reranker — small/fast for M2, upgrade to bge-reranker-large on RTX 4090
+    LOCAL_RERANK_MODEL: str = field(
+        default_factory=lambda: _default(
+            "LOCAL_RERANK_MODEL", "cross-encoder/ms-marco-MiniLM-L-6-v2"))
     LOCAL_RERANK_DEVICE: str = field(default_factory=_detect_device)
 
     # === CLOUD LLM (Phase 2 — Selective Upgrades) ===
@@ -184,7 +196,7 @@ class JarvisConfig:
                 "model": self.LOCAL_LLM_MODEL,
                 "base_url": self.OLLAMA_BASE_URL,
                 "temperature": 0.1,
-                "num_ctx": 4096,
+                "num_ctx": self.LOCAL_LLM_CTX,
                 "device": self.DEVICE,
             }
         if self.ANTHROPIC_API_KEY:
@@ -205,6 +217,16 @@ class JarvisConfig:
 
     def get_embed_config(self) -> Dict[str, Any]:
         if self.USE_LOCAL_EMBED:
+            if self.USE_HF_EMBED:
+                # Direct HuggingFace on CUDA — bypasses Ollama HTTP overhead,
+                # 5-10x faster batch embedding on RTX 4090
+                return {
+                    "provider": "huggingface",
+                    "model": self.LOCAL_EMBED_MODEL,
+                    "dimensions": self.LOCAL_EMBED_DIMS,
+                    "batch_size": self.BATCH_SIZE,
+                    "device": self.DEVICE,
+                }
             return {
                 "provider": "ollama",
                 "model": self.LOCAL_EMBED_MODEL,

@@ -121,13 +121,25 @@ class Chunker:
 
 
 class Embedder:
-    """Embedding via Ollama (local) or Voyage/OpenAI (cloud)."""
+    """Embedding via HuggingFace CUDA (GPU), Ollama (local), or cloud APIs."""
 
     def __init__(self):
         self.config = CONFIG.get_embed_config()
         provider = self.config["provider"]
 
-        if provider == "ollama":
+        if provider == "huggingface":
+            # Direct CUDA inference — bypasses Ollama HTTP, 5-10x faster on GPU
+            # Recommended for RTX 4090: BAAI/bge-large-en-v1.5 (1024-dim, MTEB top-10)
+            from langchain_community.embeddings import HuggingFaceEmbeddings
+            self.embedder = HuggingFaceEmbeddings(
+                model_name=self.config["model"],
+                model_kwargs={"device": self.config["device"]},
+                encode_kwargs={
+                    "batch_size": self.config["batch_size"],
+                    "normalize_embeddings": True,
+                },
+            )
+        elif provider == "ollama":
             from langchain_ollama import OllamaEmbeddings
             self.embedder = OllamaEmbeddings(
                 model=self.config["model"],
