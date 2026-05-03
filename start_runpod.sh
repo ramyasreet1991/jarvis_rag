@@ -43,11 +43,23 @@ else:
 PORT=$(grep "^APP_PORT=" .env | cut -d= -f2)
 PORT="${PORT:-8000}"
 
+# ── Start ingestion scheduler (every 4 hours) ─────────────────────────────────
+pkill -f run_scheduler.py 2>/dev/null || true
+mkdir -p /workspace/logs
+nohup python run_scheduler.py \
+    --interval-hours 4 \
+    --days 1 \
+    > /workspace/logs/scheduler.log 2>&1 &
+SCHED_PID=$!
+echo "  ✅ Scheduler started (PID $SCHED_PID, every 4h)"
+
 echo ""
 echo "══════════════════════════════════════════════"
 echo "  Starting Jarvis RAG API on port $PORT"
 echo "  Docs:   http://localhost:$PORT/docs"
 echo "  Health: http://localhost:$PORT/health"
+echo "  Scheduler: PID $SCHED_PID (every 4h)"
+echo "  Logs:   /workspace/logs/scheduler.log"
 echo "══════════════════════════════════════════════"
 echo ""
 
