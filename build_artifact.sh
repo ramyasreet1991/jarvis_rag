@@ -47,6 +47,7 @@ SOURCE_FILES=(
     env.runpod
     setup_runpod.sh
     start_runpod.sh
+    test_api.sh
     RUNPOD_README.md
 
     # Docs
