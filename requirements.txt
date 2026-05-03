@@ -40,7 +40,7 @@ trafilatura==1.12.2
 requests==2.31.0
 youtube-transcript-api==0.6.2
 yt-dlp>=2024.1.0
-openai-whisper==20231117          # YouTube + podcast transcription (GPU)
+openai-whisper>=20231117          # YouTube + podcast transcription (GPU)
 
 # ── API Server ────────────────────────────────────────────────────────────────
 fastapi==0.115.2
