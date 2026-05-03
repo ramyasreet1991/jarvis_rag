@@ -5,14 +5,18 @@
 # ─────────────────────────────────────────────────────────────────────────────
 set -e
 
-PROJECT_DIR="/workspace/jarvis-RAG"
-cd "$PROJECT_DIR" || { echo "❌ Project not found at $PROJECT_DIR"; exit 1; }
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$PROJECT_DIR"
 
 # ── Verify .env exists ────────────────────────────────────────────────────────
 if [ ! -f ".env" ]; then
     echo "❌ .env not found. Run setup_runpod.sh first."
     exit 1
 fi
+
+# ── Point Ollama at network volume ────────────────────────────────────────────
+export OLLAMA_MODELS=/workspace/ollama/models
+mkdir -p "$OLLAMA_MODELS"
 
 # ── Ensure Ollama is running ──────────────────────────────────────────────────
 if ! pgrep -x ollama &>/dev/null; then

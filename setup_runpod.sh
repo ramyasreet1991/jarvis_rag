@@ -31,10 +31,15 @@ fi
 echo ""
 echo "▶ Creating data directories..."
 mkdir -p /workspace/data/chroma_db \
+         /workspace/ollama/models \
          /workspace/output \
          /workspace/logs \
          /workspace/backups
 echo "  ✅ Directories ready"
+
+# Point Ollama at the network volume — container disk is too small for LLMs
+export OLLAMA_MODELS=/workspace/ollama/models
+echo "  ✅ OLLAMA_MODELS → $OLLAMA_MODELS"
 
 # ── 4. System dependencies ───────────────────────────────────────────────────
 echo ""
