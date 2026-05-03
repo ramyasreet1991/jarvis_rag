@@ -718,6 +718,8 @@ def route_source(source: dict, days: int, seen: set, dry_run: bool,
 # ── Main ──────────────────────────────────────────────────────────────────────
 
 def main():
+    global API_HOST, API_KEY
+
     parser = argparse.ArgumentParser(description="Ingest all configured sources into Jarvis RAG KB")
     parser.add_argument("--host", default=API_HOST, help="API base URL")
     parser.add_argument("--api-key", default=API_KEY, help="API key")
@@ -735,7 +737,6 @@ def main():
     parser.add_argument("--reset-seen", action="store_true", help="Clear the dedup cache")
     args = parser.parse_args()
 
-    global API_HOST, API_KEY
     API_HOST = args.host
     API_KEY  = args.api_key
 
