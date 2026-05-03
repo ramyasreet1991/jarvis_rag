@@ -216,7 +216,7 @@ def list_recent_videos(handle: str, days: int, max_videos: int) -> list:
             if len(parts) < 3:
                 continue
             vid_id, title, upload_date = parts[0], parts[1], parts[2]
-            duration = int(parts[3]) if len(parts) > 3 else 0
+            duration = int(float(parts[3])) if len(parts) > 3 else 0
             # Skip shorts (< 90s) and very long videos (> 90 min)
             if duration and (duration < 90 or duration > 5400):
                 continue
