@@ -1,3 +1,9 @@
+# ── Nifty200 Momentum 30 — Additional dependencies ───────────────────────────
+mcp>=1.0.0
+yfinance>=0.2.36
+supabase>=2.3.0
+httpx>=0.27.2
+
 # ── Jarvis RAG — RunPod Requirements ─────────────────────────────────────────
 # Python 3.11 + CUDA (RTX 4090). Pinned only where strictly necessary.
 # LangChain ecosystem uses >= to avoid internal version conflicts.
